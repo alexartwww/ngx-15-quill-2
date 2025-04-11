@@ -1,6 +1,6 @@
 {
-  "name": "ngx-quill",
-  "version": "0.0.4",
+  "name": "ngx-15-quill-2",
+  "version": "0.0.5",
   "license": "MIT",
   "author": {
     "name": "Bengt Weiße"
@@ -40,11 +40,11 @@
       "name": "Bengt Weiße"
     }
   ],
-  "module": "fesm2015/ngx-quill.mjs",
-  "es2020": "fesm2020/ngx-quill.mjs",
-  "esm2020": "esm2020/ngx-quill.mjs",
-  "fesm2020": "fesm2020/ngx-quill.mjs",
-  "fesm2015": "fesm2015/ngx-quill.mjs",
+  "module": "fesm2015/ngx-15-quill-2.mjs",
+  "es2020": "fesm2020/ngx-15-quill-2.mjs",
+  "esm2020": "esm2020/ngx-15-quill-2.mjs",
+  "fesm2020": "fesm2020/ngx-15-quill-2.mjs",
+  "fesm2015": "fesm2015/ngx-15-quill-2.mjs",
   "typings": "index.d.ts",
   "exports": {
     "./package.json": {
@@ -52,19 +52,19 @@
     },
     ".": {
       "types": "./index.d.ts",
-      "esm2020": "./esm2020/ngx-quill.mjs",
-      "es2020": "./fesm2020/ngx-quill.mjs",
-      "es2015": "./fesm2015/ngx-quill.mjs",
-      "node": "./fesm2015/ngx-quill.mjs",
-      "default": "./fesm2020/ngx-quill.mjs"
+      "esm2020": "./esm2020/ngx-15-quill-2.mjs",
+      "es2020": "./fesm2020/ngx-15-quill-2.mjs",
+      "es2015": "./fesm2015/ngx-15-quill-2.mjs",
+      "node": "./fesm2015/ngx-15-quill-2.mjs",
+      "default": "./fesm2020/ngx-15-quill-2.mjs"
     },
     "./config": {
       "types": "./config/index.d.ts",
-      "esm2020": "./esm2020/config/ngx-quill-config.mjs",
-      "es2020": "./fesm2020/ngx-quill-config.mjs",
-      "es2015": "./fesm2015/ngx-quill-config.mjs",
-      "node": "./fesm2015/ngx-quill-config.mjs",
-      "default": "./fesm2020/ngx-quill-config.mjs"
+      "esm2020": "./esm2020/config/ngx-15-quill-2-config.mjs",
+      "es2020": "./fesm2020/ngx-15-quill-2-config.mjs",
+      "es2015": "./fesm2015/ngx-15-quill-2-config.mjs",
+      "node": "./fesm2015/ngx-15-quill-2-config.mjs",
+      "default": "./fesm2020/ngx-15-quill-2-config.mjs"
     }
   },
   "dependencies": {

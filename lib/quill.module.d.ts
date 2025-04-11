@@ -1,5 +1,5 @@
 import { ModuleWithProviders } from '@angular/core';
-import { QuillConfig } from 'ngx-quill/config';
+import { QuillConfig } from 'ngx-15-quill-2/config';
 import * as i0 from "@angular/core";
 import * as i1 from "./quill-editor.component";
 import * as i2 from "./quill-view.component";

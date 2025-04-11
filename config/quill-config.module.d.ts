@@ -3,9 +3,9 @@ import { QuillConfig } from './quill-editor.interfaces';
 import * as i0 from "@angular/core";
 /**
  * This `NgModule` provides a global Quill config on the root level, e.g., in `AppModule`.
- * But this eliminates the need to import the entire `ngx-quill` library into the main bundle.
+ * But this eliminates the need to import the entire `ngx-15-quill-2` library into the main bundle.
  * The `quill-editor` itself may be rendered in any lazy-loaded module, but importing `QuillModule`
- * into the `AppModule` will bundle the `ngx-quill` into the vendor.
+ * into the `AppModule` will bundle the `ngx-15-quill-2` into the vendor.
  */
 export declare class QuillConfigModule {
     static forRoot(config: QuillConfig): ModuleWithProviders<QuillConfigModule>;

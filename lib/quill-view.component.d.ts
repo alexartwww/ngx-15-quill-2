@@ -1,6 +1,6 @@
 import QuillType from 'quill';
 import { AfterViewInit, ElementRef, EventEmitter, OnChanges, Renderer2, SimpleChanges, NgZone, OnDestroy } from '@angular/core';
-import { CustomOption, CustomModule, QuillModules, QuillBeforeRender } from 'ngx-quill/config';
+import { CustomOption, CustomModule, QuillModules, QuillBeforeRender } from 'ngx-15-quill-2/config';
 import { QuillService } from './quill.service';
 import { DomSanitizer } from '@angular/platform-browser';
 import * as i0 from "@angular/core";

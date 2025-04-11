@@ -4,7 +4,7 @@ import type { QuillOptions } from 'quill';
 import type DeltaType from 'quill-delta';
 import { AfterViewInit, ChangeDetectorRef, ElementRef, EventEmitter, Injector, NgZone, OnChanges, OnDestroy, OnInit, Renderer2, SimpleChanges } from '@angular/core';
 import { ControlValueAccessor, Validator } from '@angular/forms';
-import { CustomModule, CustomOption, QuillBeforeRender, QuillModules } from 'ngx-quill/config';
+import { CustomModule, CustomOption, QuillBeforeRender, QuillModules } from 'ngx-15-quill-2/config';
 import { QuillService } from './quill.service';
 import * as i0 from "@angular/core";
 export interface Range {
