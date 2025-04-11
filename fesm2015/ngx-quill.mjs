@@ -1086,3 +1086,4 @@ QuillModule.ɵinj = /*@__PURE__*/ i0.ɵɵdefineInjector({ imports: [QuillEditorC
 
 export { QuillEditorBase, QuillEditorComponent, QuillModule, QuillService, QuillViewComponent, QuillViewHTMLComponent };
 //# sourceMappingURL=ngx-quill.mjs.map
+//# sourceMappingURL=ngx-quill.mjs.map
