@@ -8,14 +8,12 @@ export declare class QuillService {
     private document;
     private quill$;
     constructor(injector: Injector, config: QuillConfig);
+    private registeredModules;
     getQuill(): Observable<any>;
-    /**
-     * Marked as internal so it won't be available for `ngx-quill` consumers, this is only
-     * internal method to be used within the library.
-     *
-     * @internal
-     */
-    registerCustomModules(Quill: any, customModules: CustomModule[] | undefined, suppressGlobalRegisterWarning?: boolean): Promise<any>;
+    /** @internal */
+    beforeRender(Quill: any, customModules: CustomModule[] | undefined, beforeRender?: import("ngx-quill/config").QuillBeforeRender): Observable<any>;
+    /** @internal */
+    private registerCustomModules;
     static ɵfac: i0.ɵɵFactoryDeclaration<QuillService, [null, { optional: true; }]>;
     static ɵprov: i0.ɵɵInjectableDeclaration<QuillService>;
 }

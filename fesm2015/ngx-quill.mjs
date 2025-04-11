@@ -2,18 +2,28 @@ import { defaultModules, QUILL_CONFIG_TOKEN } from 'ngx-quill/config';
 export * from 'ngx-quill/config';
 import * as i0 from '@angular/core';
 import { Injectable, Optional, Inject, EventEmitter, SecurityContext, PLATFORM_ID, Directive, Input, Output, ElementRef, ChangeDetectorRef, Renderer2, NgZone, forwardRef, Component, ViewEncapsulation, NgModule } from '@angular/core';
+import { __awaiter, __decorate } from 'tslib';
 import * as i3 from '@angular/common';
 import { DOCUMENT, isPlatformServer, CommonModule } from '@angular/common';
 import * as i1 from '@angular/platform-browser';
 import { DomSanitizer } from '@angular/platform-browser';
-import { defer, isObservable, firstValueFrom, Subscription, fromEvent } from 'rxjs';
+import { Observable, defer, firstValueFrom, from, forkJoin, map, of, isObservable, tap, fromEvent, Subscription } from 'rxjs';
 import { shareReplay, mergeMap, debounceTime } from 'rxjs/operators';
 import { NG_VALUE_ACCESSOR, NG_VALIDATORS } from '@angular/forms';
-import { __awaiter } from 'tslib';
+import { untilDestroyed, UntilDestroy } from '@ngneat/until-destroy';
 
 const getFormat = (format, configFormat) => {
     const passedFormat = format || configFormat;
     return passedFormat || 'html';
+};
+const raf$ = () => {
+    return new Observable(subscriber => {
+        const rafId = requestAnimationFrame(() => {
+            subscriber.next();
+            subscriber.complete();
+        });
+        return () => cancelAnimationFrame(rafId);
+    });
 };
 
 class QuillService {
@@ -47,8 +57,14 @@ class QuillService {
                 newCustomOption.whitelist = customOption.whitelist;
                 this.Quill.register(newCustomOption, true, this.config.suppressGlobalRegisterWarning);
             });
-            return yield this.registerCustomModules(this.Quill, this.config.customModules, this.config.suppressGlobalRegisterWarning);
-        })).pipe(shareReplay({ bufferSize: 1, refCount: true }));
+            return firstValueFrom(this.registerCustomModules(this.Quill, this.config.customModules, this.config.suppressGlobalRegisterWarning));
+        })).pipe(shareReplay({
+            bufferSize: 1,
+            refCount: false
+        }));
+        // A list of custom modules that have already been registered,
+        // so we don’t need to await their implementation.
+        this.registeredModules = new Set();
         this.document = injector.get(DOCUMENT);
         if (!this.config) {
             this.config = { modules: defaultModules };
@@ -57,29 +73,43 @@ class QuillService {
     getQuill() {
         return this.quill$;
     }
-    /**
-     * Marked as internal so it won't be available for `ngx-quill` consumers, this is only
-     * internal method to be used within the library.
-     *
-     * @internal
-     */
+    /** @internal */
+    beforeRender(Quill, customModules, beforeRender = this.config.beforeRender) {
+        // This function is called each time the editor needs to be rendered,
+        // so it operates individually per component. If no custom module needs to be
+        // registered and no `beforeRender` function is provided, it will emit
+        // immediately and proceed with the rendering.
+        const sources = [this.registerCustomModules(Quill, customModules)];
+        if (beforeRender) {
+            sources.push(from(beforeRender()));
+        }
+        return forkJoin(sources).pipe(map(() => Quill));
+    }
+    /** @internal */
     registerCustomModules(Quill, customModules, suppressGlobalRegisterWarning) {
-        return __awaiter(this, void 0, void 0, function* () {
-            if (Array.isArray(customModules)) {
-                // eslint-disable-next-line prefer-const
-                for (let { implementation, path } of customModules) {
-                    // The `implementation` might be an observable that resolves the actual implementation,
-                    // e.g. if it should be lazy loaded.
-                    if (isObservable(implementation)) {
-                        implementation = yield firstValueFrom(implementation);
-                    }
-                    Quill.register(path, implementation, suppressGlobalRegisterWarning);
-                }
+        if (!Array.isArray(customModules)) {
+            return of(Quill);
+        }
+        const sources = [];
+        for (const customModule of customModules) {
+            const { path, implementation: maybeImplementation } = customModule;
+            // If the module is already registered, proceed to the next module...
+            if (this.registeredModules.has(path)) {
+                continue;
             }
-            // Return `Quill` constructor so we'll be able to re-use its return value except of using
-            // `map` operators, etc.
-            return Quill;
-        });
+            this.registeredModules.add(path);
+            if (isObservable(maybeImplementation)) {
+                // If the implementation is an observable, we will wait for it to load and
+                // then register it with Quill. The caller will wait until the module is registered.
+                sources.push(maybeImplementation.pipe(tap((implementation) => {
+                    Quill.register(path, implementation, suppressGlobalRegisterWarning);
+                })));
+            }
+            else {
+                Quill.register(path, maybeImplementation, suppressGlobalRegisterWarning);
+            }
+        }
+        return sources.length > 0 ? forkJoin(sources).pipe(map(() => Quill)) : of(Quill);
     }
 }
 QuillService.ɵfac = function QuillService_Factory(t) { return new (t || QuillService)(i0.ɵɵinject(i0.Injector), i0.ɵɵinject(QUILL_CONFIG_TOKEN, 8)); };
@@ -100,60 +130,20 @@ QuillService.ɵprov = /*@__PURE__*/ i0.ɵɵdefineInjectable({ token: QuillServic
     }, null);
 })();
 
-function QuillEditorComponent_ng_container_0_div_1_Template(rf, ctx) {
+var QuillEditorBase_1;
+function QuillEditorComponent_div_0_Template(rf, ctx) {
     if (rf & 1) {
-        i0.ɵɵelement(0, "div", 2);
+        i0.ɵɵelement(0, "div", 1);
     }
 }
-function QuillEditorComponent_ng_container_0_pre_2_Template(rf, ctx) {
+function QuillEditorComponent_div_4_Template(rf, ctx) {
     if (rf & 1) {
-        i0.ɵɵelement(0, "pre", 2);
+        i0.ɵɵelement(0, "div", 1);
     }
 }
-function QuillEditorComponent_ng_container_0_Template(rf, ctx) {
-    if (rf & 1) {
-        i0.ɵɵelementContainerStart(0);
-        i0.ɵɵtemplate(1, QuillEditorComponent_ng_container_0_div_1_Template, 1, 0, "div", 1);
-        i0.ɵɵtemplate(2, QuillEditorComponent_ng_container_0_pre_2_Template, 1, 0, "pre", 1);
-        i0.ɵɵelementContainerEnd();
-    }
-    if (rf & 2) {
-        const ctx_r0 = i0.ɵɵnextContext();
-        i0.ɵɵadvance(1);
-        i0.ɵɵproperty("ngIf", !ctx_r0.preserve);
-        i0.ɵɵadvance(1);
-        i0.ɵɵproperty("ngIf", ctx_r0.preserve);
-    }
-}
-function QuillEditorComponent_ng_container_2_div_1_Template(rf, ctx) {
-    if (rf & 1) {
-        i0.ɵɵelement(0, "div", 2);
-    }
-}
-function QuillEditorComponent_ng_container_2_pre_2_Template(rf, ctx) {
-    if (rf & 1) {
-        i0.ɵɵelement(0, "pre", 2);
-    }
-}
-function QuillEditorComponent_ng_container_2_Template(rf, ctx) {
-    if (rf & 1) {
-        i0.ɵɵelementContainerStart(0);
-        i0.ɵɵtemplate(1, QuillEditorComponent_ng_container_2_div_1_Template, 1, 0, "div", 1);
-        i0.ɵɵtemplate(2, QuillEditorComponent_ng_container_2_pre_2_Template, 1, 0, "pre", 1);
-        i0.ɵɵelementContainerEnd();
-    }
-    if (rf & 2) {
-        const ctx_r1 = i0.ɵɵnextContext();
-        i0.ɵɵadvance(1);
-        i0.ɵɵproperty("ngIf", !ctx_r1.preserve);
-        i0.ɵɵadvance(1);
-        i0.ɵɵproperty("ngIf", ctx_r1.preserve);
-    }
-}
-const _c0 = [[["", "quill-editor-toolbar", ""]]];
-const _c1 = ["[quill-editor-toolbar]"];
-// eslint-disable-next-line @angular-eslint/directive-class-suffix
-class QuillEditorBase {
+const _c0 = [[["", "above-quill-editor-toolbar", ""]], [["", "quill-editor-toolbar", ""]], [["", "below-quill-editor-toolbar", ""]]];
+const _c1 = ["[above-quill-editor-toolbar]", "[quill-editor-toolbar]", "[below-quill-editor-toolbar]"];
+let QuillEditorBase = QuillEditorBase_1 = class QuillEditorBase {
     constructor(injector, elementRef, cd, domSanitizer, platformId, renderer, zone, service) {
         this.elementRef = elementRef;
         this.cd = cd;
@@ -192,15 +182,17 @@ class QuillEditorBase {
         this.onSelectionChanged = new EventEmitter();
         this.onFocus = new EventEmitter();
         this.onBlur = new EventEmitter();
+        this.onNativeFocus = new EventEmitter();
+        this.onNativeBlur = new EventEmitter();
         this.disabled = false; // used to store initial value before ViewInit
         this.preserve = false;
         this.toolbarPosition = 'top';
         this.subscription = null;
         this.quillSubscription = null;
-        this.valueGetter = (quillEditor, editorElement) => {
-            let html = editorElement.querySelector('.ql-editor').innerHTML;
-            if (html === '<p><br></p>' || html === '<div><br></div>') {
-                html = this.defaultEmptyValue;
+        this.valueGetter = (quillEditor) => {
+            let html = quillEditor.getSemanticHTML();
+            if (this.isEmptyValue(html)) {
+                html = this.defaultEmptyValue();
             }
             let modelValue = html;
             const format = getFormat(this.format, this.service.config.format);
@@ -227,7 +219,7 @@ class QuillEditorBase {
                 if (sanitize) {
                     value = this.domSanitizer.sanitize(SecurityContext.HTML, value);
                 }
-                return quillEditor.clipboard.convert(value);
+                return quillEditor.clipboard.convert({ html: value });
             }
             else if (format === 'json') {
                 try {
@@ -240,7 +232,8 @@ class QuillEditorBase {
             return value;
         };
         this.selectionChangeHandler = (range, oldRange, source) => {
-            const shouldTriggerOnModelTouched = !range && !!this.onModelTouched;
+            const trackChanges = this.trackChanges || this.service.config.trackChanges;
+            const shouldTriggerOnModelTouched = !range && !!this.onModelTouched && (source === 'user' || trackChanges && trackChanges === 'all');
             // only emit changes when there's any listener
             if (!this.onBlur.observed &&
                 !this.onFocus.observed &&
@@ -277,9 +270,9 @@ class QuillEditorBase {
             // only emit changes emitted by user interactions
             const text = this.quillEditor.getText();
             const content = this.quillEditor.getContents();
-            let html = this.editorElem.querySelector('.ql-editor').innerHTML;
-            if (html === '<p><br></p>' || html === '<div><br></div>') {
-                html = this.defaultEmptyValue;
+            let html = this.quillEditor.getSemanticHTML();
+            if (this.isEmptyValue(html)) {
+                html = this.defaultEmptyValue();
             }
             const trackChanges = this.trackChanges || this.service.config.trackChanges;
             const shouldTriggerOnModelChange = (source === 'user' || trackChanges && trackChanges === 'all') && !!this.onModelChange;
@@ -289,7 +282,8 @@ class QuillEditorBase {
             }
             this.zone.run(() => {
                 if (shouldTriggerOnModelChange) {
-                    this.onModelChange(this.valueGetter(this.quillEditor, this.editorElem));
+                    const valueGetter = this.valueGetter;
+                    this.onModelChange(valueGetter(this.quillEditor));
                 }
                 this.onContentChanged.emit({
                     content,
@@ -303,7 +297,6 @@ class QuillEditorBase {
                 this.cd.markForCheck();
             });
         };
-        // eslint-disable-next-line max-len
         this.editorChangeHandler = (event, current, old, source) => {
             // only emit changes when there's any listener
             if (!this.onEditorChanged.observed) {
@@ -313,9 +306,9 @@ class QuillEditorBase {
             if (event === 'text-change') {
                 const text = this.quillEditor.getText();
                 const content = this.quillEditor.getContents();
-                let html = this.editorElem.querySelector('.ql-editor').innerHTML;
-                if (html === '<p><br></p>' || html === '<div><br></div>') {
-                    html = this.defaultEmptyValue;
+                let html = this.quillEditor.getSemanticHTML();
+                if (this.isEmptyValue(html)) {
+                    html = this.defaultEmptyValue();
                 }
                 this.zone.run(() => {
                     this.onEditorChanged.emit({
@@ -366,15 +359,7 @@ class QuillEditorBase {
         }
         // The `quill-editor` component might be destroyed before the `quill` chunk is loaded and its code is executed
         // this will lead to runtime exceptions, since the code will be executed on DOM nodes that don't exist within the tree.
-        this.quillSubscription = this.service.getQuill().pipe(mergeMap((Quill) => {
-            var _a;
-            const promises = [this.service.registerCustomModules(Quill, this.customModules)];
-            const beforeRender = (_a = this.beforeRender) !== null && _a !== void 0 ? _a : this.service.config.beforeRender;
-            if (beforeRender) {
-                promises.push(beforeRender());
-            }
-            return Promise.all(promises).then(() => Quill);
-        })).subscribe(Quill => {
+        this.quillSubscription = this.service.getQuill().pipe(mergeMap((Quill) => this.service.beforeRender(Quill, this.customModules, this.beforeRender))).subscribe(Quill => {
             this.editorElem = this.elementRef.nativeElement.querySelector('[quill-editor-element]');
             const toolbarElem = this.elementRef.nativeElement.querySelector('[quill-editor-toolbar]');
             const modules = Object.assign({}, this.modules || this.service.config.modules);
@@ -388,9 +373,10 @@ class QuillEditorBase {
             if (placeholder === undefined) {
                 placeholder = 'Insert text here ...';
             }
-            if (this.styles) {
-                Object.keys(this.styles).forEach((key) => {
-                    this.renderer.setStyle(this.editorElem, key, this.styles[key]);
+            const styles = this.styles();
+            if (styles) {
+                Object.keys(styles).forEach((key) => {
+                    this.renderer.setStyle(this.editorElem, key, styles[key]);
                 });
             }
             if (this.classes) {
@@ -413,16 +399,6 @@ class QuillEditorBase {
             if (!readOnly && this.readOnly !== false) {
                 readOnly = this.service.config.readOnly !== undefined ? this.service.config.readOnly : false;
             }
-            let defaultEmptyValue = this.defaultEmptyValue;
-            if (this.service.config.hasOwnProperty('defaultEmptyValue')) {
-                defaultEmptyValue = this.service.config.defaultEmptyValue;
-            }
-            let scrollingContainer = this.scrollingContainer;
-            if (!scrollingContainer && this.scrollingContainer !== null) {
-                scrollingContainer =
-                    this.service.config.scrollingContainer === null
-                        || this.service.config.scrollingContainer ? this.service.config.scrollingContainer : null;
-            }
             let formats = this.formats;
             if (!formats && formats === undefined) {
                 formats = this.service.config.formats ? [...this.service.config.formats] : (this.service.config.formats === null ? null : undefined);
@@ -431,16 +407,32 @@ class QuillEditorBase {
                 var _a, _b, _c;
                 this.quillEditor = new Quill(this.editorElem, {
                     bounds,
-                    debug: debug,
-                    formats: formats,
+                    debug,
+                    formats,
                     modules,
                     placeholder,
                     readOnly,
-                    defaultEmptyValue,
-                    scrollingContainer: scrollingContainer,
-                    strict: this.strict,
+                    registry: this.registry,
                     theme: this.theme || (this.service.config.theme ? this.service.config.theme : 'snow')
                 });
+                if (this.onNativeBlur.observed) {
+                    // https://github.com/quilljs/quill/issues/2186#issuecomment-533401328
+                    fromEvent(this.quillEditor.scroll.domNode, 'blur').pipe(untilDestroyed(this)).subscribe(() => this.onNativeBlur.next({
+                        editor: this.quillEditor,
+                        source: 'dom'
+                    }));
+                    // https://github.com/quilljs/quill/issues/2186#issuecomment-803257538
+                    const toolbar = this.quillEditor.getModule('toolbar');
+                    if (toolbar.container) {
+                        fromEvent(toolbar.container, 'mousedown').pipe(untilDestroyed(this)).subscribe(e => e.preventDefault());
+                    }
+                }
+                if (this.onNativeFocus.observed) {
+                    fromEvent(this.quillEditor.scroll.domNode, 'focus').pipe(untilDestroyed(this)).subscribe(() => this.onNativeFocus.next({
+                        editor: this.quillEditor,
+                        source: 'dom'
+                    }));
+                }
                 // Set optional link placeholder, Quill has no native API for it so using workaround
                 if (this.linkPlaceholder) {
                     const tooltip = (_b = (_a = this.quillEditor) === null || _a === void 0 ? void 0 : _a.theme) === null || _b === void 0 ? void 0 : _b.tooltip;
@@ -456,10 +448,12 @@ class QuillEditorBase {
                     this.quillEditor.setText(this.content, 'silent');
                 }
                 else {
-                    const newValue = this.valueSetter(this.quillEditor, this.content);
+                    const valueSetter = this.valueSetter;
+                    const newValue = valueSetter(this.quillEditor, this.content);
                     this.quillEditor.setContents(newValue, 'silent');
                 }
-                this.quillEditor.history.clear();
+                const history = this.quillEditor.getModule('history');
+                history.clear();
             }
             // initialize disabled status based on this.disabled as default value
             this.setDisabledState();
@@ -472,12 +466,11 @@ class QuillEditorBase {
             // The `requestAnimationFrame` will trigger change detection and `onEditorCreated` will also call `markDirty()`
             // internally, since Angular wraps template event listeners into `listener` instruction. We're using the `requestAnimationFrame`
             // to prevent the frame drop and avoid `ExpressionChangedAfterItHasBeenCheckedError` error.
-            requestAnimationFrame(() => {
+            raf$().pipe(untilDestroyed(this)).subscribe(() => {
                 if (this.onValidatorChanged) {
                     this.onValidatorChanged();
                 }
                 this.onEditorCreated.emit(this.quillEditor);
-                this.onEditorCreated.complete();
             });
         });
     }
@@ -499,10 +492,6 @@ class QuillEditorBase {
             this.quillEditor.root.dataset.placeholder =
                 changes.placeholder.currentValue;
         }
-        if (changes.defaultEmptyValue) {
-            this.quillEditor.root.dataset.defaultEmptyValue =
-                changes.defaultEmptyValue.currentValue;
-        }
         if (changes.styles) {
             const currentStyling = changes.styles.currentValue;
             const previousStyling = changes.styles.previousValue;
@@ -513,7 +502,7 @@ class QuillEditorBase {
             }
             if (currentStyling) {
                 Object.keys(currentStyling).forEach((key) => {
-                    this.renderer.setStyle(this.editorElem, key, this.styles[key]);
+                    this.renderer.setStyle(this.editorElem, key, this.styles()[key]);
                 });
             }
         }
@@ -535,12 +524,12 @@ class QuillEditorBase {
         /* eslint-enable @typescript-eslint/dot-notation */
     }
     addClasses(classList) {
-        QuillEditorBase.normalizeClassNames(classList).forEach((c) => {
+        QuillEditorBase_1.normalizeClassNames(classList).forEach((c) => {
             this.renderer.addClass(this.editorElem, c);
         });
     }
     removeClasses(classList) {
-        QuillEditorBase.normalizeClassNames(classList).forEach((c) => {
+        QuillEditorBase_1.normalizeClassNames(classList).forEach((c) => {
             this.renderer.removeClass(this.editorElem, c);
         });
     }
@@ -554,7 +543,8 @@ class QuillEditorBase {
             return;
         }
         const format = getFormat(this.format, this.service.config.format);
-        const newValue = this.valueSetter(this.quillEditor, currentValue);
+        const valueSetter = this.valueSetter;
+        const newValue = valueSetter(this.quillEditor, currentValue);
         if (this.compareValues) {
             const currentEditorValue = this.quillEditor.getContents();
             if (JSON.stringify(currentEditorValue) === JSON.stringify(newValue)) {
@@ -598,6 +588,7 @@ class QuillEditorBase {
         this.onValidatorChanged = fn;
     }
     validate() {
+        var _a;
         if (!this.quillEditor) {
             return null;
         }
@@ -607,7 +598,7 @@ class QuillEditorBase {
         // trim text if wanted + handle special case that an empty editor contains a new line
         const textLength = this.trimOnValidation ? text.trim().length : (text.length === 1 && text.trim().length === 0 ? 0 : text.length - 1);
         const deltaOperations = this.quillEditor.getContents().ops;
-        const onlyEmptyOperation = deltaOperations && deltaOperations.length === 1 && ['\n', ''].includes(String(deltaOperations[0].insert));
+        const onlyEmptyOperation = !!deltaOperations && deltaOperations.length === 1 && ['\n', ''].includes((_a = deltaOperations[0].insert) === null || _a === void 0 ? void 0 : _a.toString());
         if (this.minLength && textLength && textLength < this.minLength) {
             err.minLengthError = {
                 given: textLength,
@@ -668,9 +659,15 @@ class QuillEditorBase {
             this.subscription = null;
         }
     }
-}
+    isEmptyValue(html) {
+        return html === '<p></p>' || html === '<div></div>' || html === '<p><br></p>' || html === '<div><br></div>';
+    }
+};
 QuillEditorBase.ɵfac = function QuillEditorBase_Factory(t) { return new (t || QuillEditorBase)(i0.ɵɵdirectiveInject(i0.Injector), i0.ɵɵdirectiveInject(i0.ElementRef), i0.ɵɵdirectiveInject(i0.ChangeDetectorRef), i0.ɵɵdirectiveInject(i1.DomSanitizer), i0.ɵɵdirectiveInject(PLATFORM_ID), i0.ɵɵdirectiveInject(i0.Renderer2), i0.ɵɵdirectiveInject(i0.NgZone), i0.ɵɵdirectiveInject(QuillService)); };
-QuillEditorBase.ɵdir = /*@__PURE__*/ i0.ɵɵdefineDirective({ type: QuillEditorBase, inputs: { format: "format", theme: "theme", modules: "modules", debug: "debug", readOnly: "readOnly", placeholder: "placeholder", maxLength: "maxLength", minLength: "minLength", required: "required", formats: "formats", customToolbarPosition: "customToolbarPosition", sanitize: "sanitize", beforeRender: "beforeRender", styles: "styles", strict: "strict", scrollingContainer: "scrollingContainer", bounds: "bounds", customOptions: "customOptions", customModules: "customModules", trackChanges: "trackChanges", preserveWhitespace: "preserveWhitespace", classes: "classes", trimOnValidation: "trimOnValidation", linkPlaceholder: "linkPlaceholder", compareValues: "compareValues", filterNull: "filterNull", debounceTime: "debounceTime", defaultEmptyValue: "defaultEmptyValue", valueGetter: "valueGetter", valueSetter: "valueSetter" }, outputs: { onEditorCreated: "onEditorCreated", onEditorChanged: "onEditorChanged", onContentChanged: "onContentChanged", onSelectionChanged: "onSelectionChanged", onFocus: "onFocus", onBlur: "onBlur" }, features: [i0.ɵɵNgOnChangesFeature] });
+QuillEditorBase.ɵdir = /*@__PURE__*/ i0.ɵɵdefineDirective({ type: QuillEditorBase, inputs: { format: "format", theme: "theme", modules: "modules", debug: "debug", readOnly: "readOnly", placeholder: "placeholder", maxLength: "maxLength", minLength: "minLength", required: "required", formats: "formats", customToolbarPosition: "customToolbarPosition", sanitize: "sanitize", beforeRender: "beforeRender", styles: "styles", strict: "strict", scrollingContainer: "scrollingContainer", bounds: "bounds", customOptions: "customOptions", customModules: "customModules", trackChanges: "trackChanges", preserveWhitespace: "preserveWhitespace", classes: "classes", trimOnValidation: "trimOnValidation", linkPlaceholder: "linkPlaceholder", compareValues: "compareValues", filterNull: "filterNull", debounceTime: "debounceTime", registry: "registry", defaultEmptyValue: "defaultEmptyValue", valueGetter: "valueGetter", valueSetter: "valueSetter" }, outputs: { onEditorCreated: "onEditorCreated", onEditorChanged: "onEditorChanged", onContentChanged: "onContentChanged", onSelectionChanged: "onSelectionChanged", onFocus: "onFocus", onBlur: "onBlur", onNativeFocus: "onNativeFocus", onNativeBlur: "onNativeBlur" }, features: [i0.ɵɵNgOnChangesFeature] });
+QuillEditorBase = QuillEditorBase_1 = __decorate([
+    UntilDestroy()
+], QuillEditorBase);
 (function () {
     (typeof ngDevMode === "undefined" || ngDevMode) && i0.ɵsetClassMetadata(QuillEditorBase, [{
             type: Directive
@@ -733,6 +730,8 @@ QuillEditorBase.ɵdir = /*@__PURE__*/ i0.ɵɵdefineDirective({ type: QuillEditor
                 type: Input
             }], debounceTime: [{
                 type: Input
+            }], registry: [{
+                type: Input
             }], defaultEmptyValue: [{
                 type: Input
             }], onEditorCreated: [{
@@ -746,6 +745,10 @@ QuillEditorBase.ɵdir = /*@__PURE__*/ i0.ɵɵdefineDirective({ type: QuillEditor
             }], onFocus: [{
                 type: Output
             }], onBlur: [{
+                type: Output
+            }], onNativeFocus: [{
+                type: Output
+            }], onNativeBlur: [{
                 type: Output
             }], valueGetter: [{
                 type: Input
@@ -772,16 +775,18 @@ QuillEditorComponent.ɵcmp = /*@__PURE__*/ i0.ɵɵdefineComponent({ type: QuillE
                 // eslint-disable-next-line @typescript-eslint/no-use-before-define
                 useExisting: forwardRef(() => QuillEditorComponent)
             }
-        ]), i0.ɵɵInheritDefinitionFeature, i0.ɵɵStandaloneFeature], ngContentSelectors: _c1, decls: 3, vars: 2, consts: [[4, "ngIf"], ["quill-editor-element", "", 4, "ngIf"], ["quill-editor-element", ""]], template: function QuillEditorComponent_Template(rf, ctx) {
+        ]), i0.ɵɵInheritDefinitionFeature, i0.ɵɵStandaloneFeature], ngContentSelectors: _c1, decls: 5, vars: 2, consts: [["quill-editor-element", "", 4, "ngIf"], ["quill-editor-element", ""]], template: function QuillEditorComponent_Template(rf, ctx) {
         if (rf & 1) {
             i0.ɵɵprojectionDef(_c0);
-            i0.ɵɵtemplate(0, QuillEditorComponent_ng_container_0_Template, 3, 2, "ng-container", 0);
+            i0.ɵɵtemplate(0, QuillEditorComponent_div_0_Template, 1, 0, "div", 0);
             i0.ɵɵprojection(1);
-            i0.ɵɵtemplate(2, QuillEditorComponent_ng_container_2_Template, 3, 2, "ng-container", 0);
+            i0.ɵɵprojection(2, 1);
+            i0.ɵɵprojection(3, 2);
+            i0.ɵɵtemplate(4, QuillEditorComponent_div_4_Template, 1, 0, "div", 0);
         }
         if (rf & 2) {
             i0.ɵɵproperty("ngIf", ctx.toolbarPosition !== "top");
-            i0.ɵɵadvance(2);
+            i0.ɵɵadvance(4);
             i0.ɵɵproperty("ngIf", ctx.toolbarPosition === "top");
         }
     }, dependencies: [CommonModule, i3.NgIf], styles: ["[_nghost-%COMP%]{display:inline-block}"] });
@@ -802,16 +807,12 @@ QuillEditorComponent.ɵcmp = /*@__PURE__*/ i0.ɵɵdefineComponent({ type: QuillE
                             useExisting: forwardRef(() => QuillEditorComponent)
                         }
                     ], selector: 'quill-editor', template: `
-  <ng-container *ngIf="toolbarPosition !== 'top'">
-    <div quill-editor-element *ngIf="!preserve"></div>
-    <pre quill-editor-element *ngIf="preserve"></pre>
-  </ng-container>
-  <ng-content select="[quill-editor-toolbar]"></ng-content>
-  <ng-container *ngIf="toolbarPosition === 'top'">
-    <div quill-editor-element *ngIf="!preserve"></div>
-    <pre quill-editor-element *ngIf="preserve"></pre>
-  </ng-container>
-`, standalone: true, imports: [CommonModule], styles: [":host{display:inline-block}\n"] }]
+    <div *ngIf="toolbarPosition !== 'top'" quill-editor-element></div>
+    <ng-content select="[above-quill-editor-toolbar]"></ng-content>
+    <ng-content select="[quill-editor-toolbar]"></ng-content>
+    <ng-content select="[below-quill-editor-toolbar]"></ng-content>
+    <div *ngIf="toolbarPosition === 'top'" quill-editor-element></div>
+  `, standalone: true, imports: [CommonModule], styles: [":host{display:inline-block}\n"] }]
         }], function () {
         return [{ type: i0.Injector }, { type: i0.ElementRef, decorators: [{
                         type: Inject,
@@ -898,17 +899,7 @@ QuillViewHTMLComponent.ɵcmp = /*@__PURE__*/ i0.ɵɵdefineComponent({ type: Quil
             }] });
 })();
 
-function QuillViewComponent_div_0_Template(rf, ctx) {
-    if (rf & 1) {
-        i0.ɵɵelement(0, "div", 1);
-    }
-}
-function QuillViewComponent_pre_1_Template(rf, ctx) {
-    if (rf & 1) {
-        i0.ɵɵelement(0, "pre", 1);
-    }
-}
-class QuillViewComponent {
+let QuillViewComponent = class QuillViewComponent {
     constructor(elementRef, renderer, zone, service, domSanitizer, platformId) {
         this.elementRef = elementRef;
         this.renderer = renderer;
@@ -919,7 +910,6 @@ class QuillViewComponent {
         this.strict = true;
         this.customModules = [];
         this.customOptions = [];
-        this.preserveWhitespace = false;
         this.onEditorCreated = new EventEmitter();
         this.preserve = false;
         this.quillSubscription = null;
@@ -949,9 +939,6 @@ class QuillViewComponent {
             }
         };
     }
-    ngOnInit() {
-        this.preserve = this.preserveWhitespace;
-    }
     ngOnChanges(changes) {
         if (!this.quillEditor) {
             return;
@@ -964,15 +951,7 @@ class QuillViewComponent {
         if (isPlatformServer(this.platformId)) {
             return;
         }
-        this.quillSubscription = this.service.getQuill().pipe(mergeMap((Quill) => {
-            var _a;
-            const promises = [this.service.registerCustomModules(Quill, this.customModules)];
-            const beforeRender = (_a = this.beforeRender) !== null && _a !== void 0 ? _a : this.service.config.beforeRender;
-            if (beforeRender) {
-                promises.push(beforeRender());
-            }
-            return Promise.all(promises).then(() => Quill);
-        })).subscribe(Quill => {
+        this.quillSubscription = this.service.getQuill().pipe(mergeMap((Quill) => this.service.beforeRender(Quill, this.customModules, this.beforeRender))).subscribe(Quill => {
             const modules = Object.assign({}, this.modules || this.service.config.modules);
             modules.toolbar = false;
             this.customOptions.forEach((customOption) => {
@@ -986,15 +965,14 @@ class QuillViewComponent {
             }
             let formats = this.formats;
             if (!formats && formats === undefined) {
-                formats = this.service.config.formats ?
-                    Object.assign({}, this.service.config.formats) : (this.service.config.formats === null ? null : undefined);
+                formats = this.service.config.formats ? [...this.service.config.formats] : (this.service.config.formats === null ? null : undefined);
             }
             const theme = this.theme || (this.service.config.theme ? this.service.config.theme : 'snow');
             this.editorElem = this.elementRef.nativeElement.querySelector('[quill-view-element]');
             this.zone.runOutsideAngular(() => {
                 this.quillEditor = new Quill(this.editorElem, {
-                    debug: debug,
-                    formats: formats,
+                    debug,
+                    formats,
                     modules,
                     readOnly: true,
                     strict: this.strict,
@@ -1002,20 +980,19 @@ class QuillViewComponent {
                 });
             });
             this.renderer.addClass(this.editorElem, 'ngx-quill-view');
-            if (this.content) {
-                this.valueSetter(this.quillEditor, this.content);
+            if (this.content()) {
+                this.valueSetter(this.quillEditor, this.content());
             }
             // The `requestAnimationFrame` triggers change detection. There's no sense to invoke the `requestAnimationFrame` if anyone is
             // listening to the `onEditorCreated` event inside the template, for instance `<quill-view (onEditorCreated)="...">`.
-            if (!this.onEditorCreated.observers.length) {
+            if (!this.onEditorCreated.observed) {
                 return;
             }
             // The `requestAnimationFrame` will trigger change detection and `onEditorCreated` will also call `markDirty()`
             // internally, since Angular wraps template event listeners into `listener` instruction. We're using the `requestAnimationFrame`
             // to prevent the frame drop and avoid `ExpressionChangedAfterItHasBeenCheckedError` error.
-            requestAnimationFrame(() => {
+            raf$().pipe(untilDestroyed(this)).subscribe(() => {
                 this.onEditorCreated.emit(this.quillEditor);
-                this.onEditorCreated.complete();
             });
         });
     }
@@ -1024,25 +1001,21 @@ class QuillViewComponent {
         (_a = this.quillSubscription) === null || _a === void 0 ? void 0 : _a.unsubscribe();
         this.quillSubscription = null;
     }
-}
+};
 QuillViewComponent.ɵfac = function QuillViewComponent_Factory(t) { return new (t || QuillViewComponent)(i0.ɵɵdirectiveInject(i0.ElementRef), i0.ɵɵdirectiveInject(i0.Renderer2), i0.ɵɵdirectiveInject(i0.NgZone), i0.ɵɵdirectiveInject(QuillService), i0.ɵɵdirectiveInject(i1.DomSanitizer), i0.ɵɵdirectiveInject(PLATFORM_ID)); };
-QuillViewComponent.ɵcmp = /*@__PURE__*/ i0.ɵɵdefineComponent({ type: QuillViewComponent, selectors: [["quill-view"]], inputs: { format: "format", theme: "theme", modules: "modules", debug: "debug", formats: "formats", sanitize: "sanitize", beforeRender: "beforeRender", strict: "strict", content: "content", customModules: "customModules", customOptions: "customOptions", preserveWhitespace: "preserveWhitespace" }, outputs: { onEditorCreated: "onEditorCreated" }, standalone: true, features: [i0.ɵɵNgOnChangesFeature, i0.ɵɵStandaloneFeature], decls: 2, vars: 2, consts: [["quill-view-element", "", 4, "ngIf"], ["quill-view-element", ""]], template: function QuillViewComponent_Template(rf, ctx) {
+QuillViewComponent.ɵcmp = /*@__PURE__*/ i0.ɵɵdefineComponent({ type: QuillViewComponent, selectors: [["quill-view"]], inputs: { format: "format", theme: "theme", modules: "modules", debug: "debug", formats: "formats", sanitize: "sanitize", beforeRender: "beforeRender", strict: "strict", content: "content", customModules: "customModules", customOptions: "customOptions" }, outputs: { onEditorCreated: "onEditorCreated" }, standalone: true, features: [i0.ɵɵNgOnChangesFeature, i0.ɵɵStandaloneFeature], decls: 1, vars: 0, consts: [["quill-view-element", ""]], template: function QuillViewComponent_Template(rf, ctx) {
         if (rf & 1) {
-            i0.ɵɵtemplate(0, QuillViewComponent_div_0_Template, 1, 0, "div", 0);
-            i0.ɵɵtemplate(1, QuillViewComponent_pre_1_Template, 1, 0, "pre", 0);
+            i0.ɵɵelement(0, "div", 0);
         }
-        if (rf & 2) {
-            i0.ɵɵproperty("ngIf", !ctx.preserve);
-            i0.ɵɵadvance(1);
-            i0.ɵɵproperty("ngIf", ctx.preserve);
-        }
-    }, dependencies: [CommonModule, i3.NgIf], styles: [".ql-container.ngx-quill-view{border:0}\n"], encapsulation: 2 });
+    }, dependencies: [CommonModule], styles: [".ql-container.ngx-quill-view{border:0}\n"], encapsulation: 2 });
+QuillViewComponent = __decorate([
+    UntilDestroy()
+], QuillViewComponent);
 (function () {
     (typeof ngDevMode === "undefined" || ngDevMode) && i0.ɵsetClassMetadata(QuillViewComponent, [{
             type: Component,
             args: [{ encapsulation: ViewEncapsulation.None, selector: 'quill-view', template: `
-<div quill-view-element *ngIf="!preserve"></div>
-<pre quill-view-element *ngIf="preserve"></pre>
+    <div quill-view-element></div>
 `, standalone: true, imports: [CommonModule], styles: [".ql-container.ngx-quill-view{border:0}\n"] }]
         }], function () {
         return [{ type: i0.ElementRef }, { type: i0.Renderer2 }, { type: i0.NgZone }, { type: QuillService }, { type: i1.DomSanitizer }, { type: undefined, decorators: [{
@@ -1070,8 +1043,6 @@ QuillViewComponent.ɵcmp = /*@__PURE__*/ i0.ɵɵdefineComponent({ type: QuillVie
             }], customModules: [{
                 type: Input
             }], customOptions: [{
-                type: Input
-            }], preserveWhitespace: [{
                 type: Input
             }], onEditorCreated: [{
                 type: Output

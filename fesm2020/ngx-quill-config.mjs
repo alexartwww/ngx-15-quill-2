@@ -1,5 +1,5 @@
 import * as i0 from '@angular/core';
-import { InjectionToken, NgModule } from '@angular/core';
+import { InjectionToken, NgModule, makeEnvironmentProviders } from '@angular/core';
 
 const defaultModules = {
     toolbar: [
@@ -19,7 +19,8 @@ const defaultModules = {
         [{ font: [] }],
         [{ align: [] }],
         ['clean'],
-        ['link', 'image', 'video'] // link and image, video
+        ['link', 'image', 'video'],
+        ['table']
     ]
 };
 
@@ -38,7 +39,8 @@ class QuillConfigModule {
     static forRoot(config) {
         return {
             ngModule: QuillConfigModule,
-            providers: [{ provide: QUILL_CONFIG_TOKEN, useValue: config }],
+            providers: [{ provide: QUILL_CONFIG_TOKEN,
+                    useValue: config }],
         };
     }
 }
@@ -49,6 +51,17 @@ QuillConfigModule.ɵinj = /*@__PURE__*/ i0.ɵɵdefineInjector({});
         type: NgModule
     }], null, null); })();
 
+/**
+ * Provides Quill configuration at the root level:
+ * ```ts
+ * bootstrapApplication(AppComponent, {
+ *   providers: [provideQuillConfig(...)]
+ * });
+ * ```
+ */
+const provideQuillConfig = (config) => makeEnvironmentProviders([{ provide: QUILL_CONFIG_TOKEN,
+        useValue: config }]);
+
 /*
  * Public API Surface of ngx-quill/config
  */
@@ -57,6 +70,6 @@ QuillConfigModule.ɵinj = /*@__PURE__*/ i0.ɵɵdefineInjector({});
  * Generated bundle index. Do not edit.
  */
 
-export { QUILL_CONFIG_TOKEN, QuillConfigModule, defaultModules };
+export { QUILL_CONFIG_TOKEN, QuillConfigModule, defaultModules, provideQuillConfig };
 //# sourceMappingURL=ngx-quill-config.mjs.map
 //# sourceMappingURL=ngx-quill-config.mjs.map

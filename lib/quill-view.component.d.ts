@@ -1,10 +1,10 @@
 import QuillType from 'quill';
-import { AfterViewInit, ElementRef, EventEmitter, OnChanges, Renderer2, SimpleChanges, NgZone, OnDestroy, OnInit } from '@angular/core';
-import { CustomOption, CustomModule, QuillModules } from 'ngx-quill/config';
+import { AfterViewInit, ElementRef, EventEmitter, OnChanges, Renderer2, SimpleChanges, NgZone, OnDestroy } from '@angular/core';
+import { CustomOption, CustomModule, QuillModules, QuillBeforeRender } from 'ngx-quill/config';
 import { QuillService } from './quill.service';
 import { DomSanitizer } from '@angular/platform-browser';
 import * as i0 from "@angular/core";
-export declare class QuillViewComponent implements AfterViewInit, OnChanges, OnDestroy, OnInit {
+export declare class QuillViewComponent implements AfterViewInit, OnChanges, OnDestroy {
     elementRef: ElementRef;
     protected renderer: Renderer2;
     protected zone: NgZone;
@@ -17,12 +17,11 @@ export declare class QuillViewComponent implements AfterViewInit, OnChanges, OnD
     debug?: 'warn' | 'log' | 'error' | false;
     formats?: string[] | null;
     sanitize?: boolean;
-    beforeRender?: () => Promise<void>;
+    beforeRender?: QuillBeforeRender;
     strict: boolean;
     content: any;
     customModules: CustomModule[];
     customOptions: CustomOption[];
-    preserveWhitespace: boolean;
     onEditorCreated: EventEmitter<any>;
     quillEditor: QuillType;
     editorElem: HTMLElement;
@@ -30,10 +29,9 @@ export declare class QuillViewComponent implements AfterViewInit, OnChanges, OnD
     private quillSubscription;
     constructor(elementRef: ElementRef, renderer: Renderer2, zone: NgZone, service: QuillService, domSanitizer: DomSanitizer, platformId: any);
     valueSetter: (quillEditor: QuillType, value: any) => any;
-    ngOnInit(): void;
     ngOnChanges(changes: SimpleChanges): void;
     ngAfterViewInit(): void;
     ngOnDestroy(): void;
     static ɵfac: i0.ɵɵFactoryDeclaration<QuillViewComponent, never>;
-    static ɵcmp: i0.ɵɵComponentDeclaration<QuillViewComponent, "quill-view", never, { "format": "format"; "theme": "theme"; "modules": "modules"; "debug": "debug"; "formats": "formats"; "sanitize": "sanitize"; "beforeRender": "beforeRender"; "strict": "strict"; "content": "content"; "customModules": "customModules"; "customOptions": "customOptions"; "preserveWhitespace": "preserveWhitespace"; }, { "onEditorCreated": "onEditorCreated"; }, never, never, true, never>;
+    static ɵcmp: i0.ɵɵComponentDeclaration<QuillViewComponent, "quill-view", never, { "format": "format"; "theme": "theme"; "modules": "modules"; "debug": "debug"; "formats": "formats"; "sanitize": "sanitize"; "beforeRender": "beforeRender"; "strict": "strict"; "content": "content"; "customModules": "customModules"; "customOptions": "customOptions"; }, { "onEditorCreated": "onEditorCreated"; }, never, never, true, never>;
 }

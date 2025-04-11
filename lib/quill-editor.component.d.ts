@@ -1,8 +1,10 @@
 import { DomSanitizer } from '@angular/platform-browser';
-import QuillType, { Delta } from 'quill';
+import type QuillType from 'quill';
+import type { QuillOptions } from 'quill';
+import type DeltaType from 'quill-delta';
 import { AfterViewInit, ChangeDetectorRef, ElementRef, EventEmitter, Injector, NgZone, OnChanges, OnDestroy, OnInit, Renderer2, SimpleChanges } from '@angular/core';
 import { ControlValueAccessor, Validator } from '@angular/forms';
-import { QuillModules, CustomOption, CustomModule } from 'ngx-quill/config';
+import { CustomModule, CustomOption, QuillBeforeRender, QuillModules } from 'ngx-quill/config';
 import { QuillService } from './quill.service';
 import * as i0 from "@angular/core";
 export interface Range {
@@ -10,11 +12,11 @@ export interface Range {
     length: number;
 }
 export interface ContentChange {
-    content: any;
-    delta: Delta;
+    content: DeltaType;
+    delta: DeltaType;
     editor: QuillType;
     html: string | null;
-    oldDelta: Delta;
+    oldDelta: DeltaType;
     source: string;
     text: string;
 }
@@ -58,7 +60,7 @@ export declare abstract class QuillEditorBase implements AfterViewInit, ControlV
     formats?: string[] | null;
     customToolbarPosition: 'top' | 'bottom';
     sanitize?: boolean;
-    beforeRender?: () => Promise<void>;
+    beforeRender?: QuillBeforeRender;
     styles: any;
     strict: boolean;
     scrollingContainer?: HTMLElement | string | null;
@@ -73,13 +75,16 @@ export declare abstract class QuillEditorBase implements AfterViewInit, ControlV
     compareValues: boolean;
     filterNull: boolean;
     debounceTime?: number;
-    defaultEmptyValue?: any;
-    onEditorCreated: EventEmitter<any>;
+    registry: QuillOptions['registry'];
+    defaultEmptyValue: any;
+    onEditorCreated: EventEmitter<QuillType>;
     onEditorChanged: EventEmitter<EditorChangeContent | EditorChangeSelection>;
     onContentChanged: EventEmitter<ContentChange>;
     onSelectionChanged: EventEmitter<SelectionChange>;
     onFocus: EventEmitter<Focus>;
     onBlur: EventEmitter<Blur>;
+    onNativeFocus: EventEmitter<Focus>;
+    onNativeBlur: EventEmitter<Blur>;
     quillEditor: QuillType;
     editorElem: HTMLElement;
     content: any;
@@ -94,12 +99,12 @@ export declare abstract class QuillEditorBase implements AfterViewInit, ControlV
     private quillSubscription;
     constructor(injector: Injector, elementRef: ElementRef, cd: ChangeDetectorRef, domSanitizer: DomSanitizer, platformId: any, renderer: Renderer2, zone: NgZone, service: QuillService);
     static normalizeClassNames(classes: string): string[];
-    valueGetter: (quillEditor: QuillType, editorElement: HTMLElement) => string | any;
+    valueGetter: (quillEditor: QuillType) => string | any;
     valueSetter: (quillEditor: QuillType, value: any) => any;
     ngOnInit(): void;
     ngAfterViewInit(): void;
     selectionChangeHandler: (range: Range | null, oldRange: Range | null, source: string) => void;
-    textChangeHandler: (delta: Delta, oldDelta: Delta, source: string) => void;
+    textChangeHandler: (delta: DeltaType, oldDelta: DeltaType, source: string) => void;
     editorChangeHandler: (event: 'text-change' | 'selection-change', current: any | Range | null, old: any | Range | null, source: string) => void;
     ngOnDestroy(): void;
     ngOnChanges(changes: SimpleChanges): void;
@@ -125,11 +130,12 @@ export declare abstract class QuillEditorBase implements AfterViewInit, ControlV
     };
     private addQuillEventListeners;
     private dispose;
+    private isEmptyValue;
     static ɵfac: i0.ɵɵFactoryDeclaration<QuillEditorBase, never>;
-    static ɵdir: i0.ɵɵDirectiveDeclaration<QuillEditorBase, never, never, { "format": "format"; "theme": "theme"; "modules": "modules"; "debug": "debug"; "readOnly": "readOnly"; "placeholder": "placeholder"; "maxLength": "maxLength"; "minLength": "minLength"; "required": "required"; "formats": "formats"; "customToolbarPosition": "customToolbarPosition"; "sanitize": "sanitize"; "beforeRender": "beforeRender"; "styles": "styles"; "strict": "strict"; "scrollingContainer": "scrollingContainer"; "bounds": "bounds"; "customOptions": "customOptions"; "customModules": "customModules"; "trackChanges": "trackChanges"; "preserveWhitespace": "preserveWhitespace"; "classes": "classes"; "trimOnValidation": "trimOnValidation"; "linkPlaceholder": "linkPlaceholder"; "compareValues": "compareValues"; "filterNull": "filterNull"; "debounceTime": "debounceTime"; "defaultEmptyValue": "defaultEmptyValue"; "valueGetter": "valueGetter"; "valueSetter": "valueSetter"; }, { "onEditorCreated": "onEditorCreated"; "onEditorChanged": "onEditorChanged"; "onContentChanged": "onContentChanged"; "onSelectionChanged": "onSelectionChanged"; "onFocus": "onFocus"; "onBlur": "onBlur"; }, never, never, false, never>;
+    static ɵdir: i0.ɵɵDirectiveDeclaration<QuillEditorBase, never, never, { "format": "format"; "theme": "theme"; "modules": "modules"; "debug": "debug"; "readOnly": "readOnly"; "placeholder": "placeholder"; "maxLength": "maxLength"; "minLength": "minLength"; "required": "required"; "formats": "formats"; "customToolbarPosition": "customToolbarPosition"; "sanitize": "sanitize"; "beforeRender": "beforeRender"; "styles": "styles"; "strict": "strict"; "scrollingContainer": "scrollingContainer"; "bounds": "bounds"; "customOptions": "customOptions"; "customModules": "customModules"; "trackChanges": "trackChanges"; "preserveWhitespace": "preserveWhitespace"; "classes": "classes"; "trimOnValidation": "trimOnValidation"; "linkPlaceholder": "linkPlaceholder"; "compareValues": "compareValues"; "filterNull": "filterNull"; "debounceTime": "debounceTime"; "registry": "registry"; "defaultEmptyValue": "defaultEmptyValue"; "valueGetter": "valueGetter"; "valueSetter": "valueSetter"; }, { "onEditorCreated": "onEditorCreated"; "onEditorChanged": "onEditorChanged"; "onContentChanged": "onContentChanged"; "onSelectionChanged": "onSelectionChanged"; "onFocus": "onFocus"; "onBlur": "onBlur"; "onNativeFocus": "onNativeFocus"; "onNativeBlur": "onNativeBlur"; }, never, never, false, never>;
 }
 export declare class QuillEditorComponent extends QuillEditorBase {
     constructor(injector: Injector, elementRef: ElementRef, cd: ChangeDetectorRef, domSanitizer: DomSanitizer, platformId: any, renderer: Renderer2, zone: NgZone, service: QuillService);
     static ɵfac: i0.ɵɵFactoryDeclaration<QuillEditorComponent, never>;
-    static ɵcmp: i0.ɵɵComponentDeclaration<QuillEditorComponent, "quill-editor", never, {}, {}, never, ["[quill-editor-toolbar]"], true, never>;
+    static ɵcmp: i0.ɵɵComponentDeclaration<QuillEditorComponent, "quill-editor", never, {}, {}, never, ["[above-quill-editor-toolbar]", "[quill-editor-toolbar]", "[below-quill-editor-toolbar]"], true, never>;
 }
