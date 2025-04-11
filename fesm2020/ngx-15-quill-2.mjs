@@ -364,7 +364,7 @@ let QuillEditorBase = QuillEditorBase_1 = class QuillEditorBase {
             if (placeholder === undefined) {
                 placeholder = 'Insert text here ...';
             }
-            const styles = this.styles();
+            const styles = this.styles;
             if (styles) {
                 Object.keys(styles).forEach((key) => {
                     this.renderer.setStyle(this.editorElem, key, styles[key]);
@@ -491,7 +491,7 @@ let QuillEditorBase = QuillEditorBase_1 = class QuillEditorBase {
             }
             if (currentStyling) {
                 Object.keys(currentStyling).forEach((key) => {
-                    this.renderer.setStyle(this.editorElem, key, this.styles()[key]);
+                    this.renderer.setStyle(this.editorElem, key, this.styles[key]);
                 });
             }
         }
@@ -950,8 +950,8 @@ let QuillViewComponent = class QuillViewComponent {
                 });
             });
             this.renderer.addClass(this.editorElem, 'ngx-quill-view');
-            if (this.content()) {
-                this.valueSetter(this.quillEditor, this.content());
+            if (this.content) {
+                this.valueSetter(this.quillEditor, this.content);
             }
             // The `requestAnimationFrame` triggers change detection. There's no sense to invoke the `requestAnimationFrame` if anyone is
             // listening to the `onEditorCreated` event inside the template, for instance `<quill-view (onEditorCreated)="...">`.
@@ -1046,5 +1046,4 @@ QuillModule.ɵinj = /*@__PURE__*/ i0.ɵɵdefineInjector({ imports: [QuillEditorC
  */
 
 export { QuillEditorBase, QuillEditorComponent, QuillModule, QuillService, QuillViewComponent, QuillViewHTMLComponent };
-//# sourceMappingURL=ngx-15-quill-2.mjs.map
 //# sourceMappingURL=ngx-15-quill-2.mjs.map
